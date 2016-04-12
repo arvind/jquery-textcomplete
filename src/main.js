@@ -10,7 +10,7 @@
 var Completer = require('./Completer'),
     Strategy  = require('./Strategy'),
     util = require('./util'),
-    counter = 0, registry = {};
+    id = 0, registry = {};
 
 /**
  * Initialize the TextComplete interaction.
@@ -27,11 +27,11 @@ module.exports = function TextComplete(elems, strategies, options) {
 
     if (!completer) {
       options = options || {};
-      options._oid = ++counter;  // unique object id
-      completer = registry[counter] = new Completer(el, options);
+      options._oid = ++id;  // unique object id
+      completer = registry[id] = new Completer(el, options);
     }
 
-    if (typeof strategies === 'string') {
+    if (util.isString(strategies)) {
       if (!completer) return;
       completer[strategies].call(completer, options);
       if (strategies === 'destroy') {
