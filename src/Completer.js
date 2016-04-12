@@ -30,10 +30,10 @@ function Completer(element, options) {
   }
 }
 
-Completer._getDefaults = function () {
+Completer._getDefaults = function() {
   if (!Completer.DEFAULTS) {
     Completer.DEFAULTS = {
-      appendTo: $('body'),
+      appendTo: document.body,
       zIndex: '100'
     };
   }
@@ -50,12 +50,11 @@ Object.assign(Completer.prototype, {
   strategies: null,
   adapter:    null,
   dropdown:   null,
-  $el:        null,
 
   // Public methods
   // --------------
 
-  initialize: function () {
+  initialize: function() {
     var el = this.el,
         tagName = el.tagName().toLowerCase(),
         Adapter, viewName;
@@ -78,25 +77,21 @@ Object.assign(Completer.prototype, {
   },
 
   // TODO
-  destroy: function () {
-    this.el.off('.' + this.id);
-    if (this.adapter) {
-      this.adapter.destroy();
-    }
-    if (this.dropdown) {
-      this.dropdown.destroy();
-    }
+  destroy: function() {
+    if (this.adapter)  this.adapter.destroy();
+    if (this.dropdown) this.dropdown.destroy();
+
     this.el = this.adapter = this.dropdown = null;
   },
 
-  deactivate: function () {
+  deactivate: function() {
     if (this.dropdown) {
       this.dropdown.deactivate();
     }
   },
 
   // Invoke textcomplete.
-  trigger: function (text, skipUnchangedTerm) {
+  trigger: function(text, skipUnchangedTerm) {
     if (!this.dropdown) this.initialize();
     text = text || this.adapter.getTextFromHeadToCaret();
     var searchQuery = this._extractSearchQuery(text);
@@ -112,7 +107,7 @@ Object.assign(Completer.prototype, {
     }
   },
 
-  fire: function (eventName) {
+  fire: function(eventName) {
     var args = Array.prototype.slice.call(arguments, 1);
     if (eventName.indexOf('textComplete') >= 0) {
       util.triggerCustom(eventName, args);
@@ -123,7 +118,7 @@ Object.assign(Completer.prototype, {
     return this;
   },
 
-  register: function (strategies) {
+  register: function(strategies) {
     Array.prototype.push.apply(this.strategies, strategies);
   },
 
@@ -133,7 +128,7 @@ Object.assign(Completer.prototype, {
   // value    - The selected element of the array callbacked from search func.
   // strategy - The Strategy object.
   // e        - Click or keydown event object.
-  select: function (value, strategy, e) {
+  select: function(value, strategy, e) {
     this._term = null;
     this.adapter.select(value, strategy, e);
     this.fire('change').fire('textComplete:select', value, strategy);
@@ -214,7 +209,7 @@ Object.assign(Completer.prototype, {
    * @param  {string} term     [description]
    * @return {Object[]}          [description]
    */
-  _zip: function (data, strategy, term) {
+  _zip: function(data, strategy, term) {
     return data.map(function(value) {
       return { value: value, strategy: strategy, term: term };
     });

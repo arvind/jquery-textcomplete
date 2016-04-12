@@ -28,6 +28,15 @@ function isNumber(obj) {
 }
 
 /**
+ * Tests if the passed argument is a array.
+ * @param  {Object}  obj A JavaScript object.
+ * @return {Boolean} Returns true if the given argument is a array.
+ */
+function isArray(obj) {
+  return toString.call(obj) === '[object Array]';
+}
+
+/**
  * Prints a warning message to the JavaScript console.
  * @param  {string} message The message to log.
  * @return {void}
@@ -43,11 +52,11 @@ function warn(message) {
  */
 function memoize(func) {
   var memo = {};
-  return function (term, callback) {
+  return function(term, callback) {
     if (memo[term]) {
       callback(memo[term]);
     } else {
-      func.call(this, term, function (data) {
+      func.call(this, term, function(data) {
         memo[term] = (memo[term] || []).concat(data);
         callback.apply(null, arguments);
       });
@@ -61,7 +70,7 @@ function memoize(func) {
  * first argument. When this occurs, the most recent ignored execution is
  * immediately replayed. For example,
  *
- *  var lockedFunc = lock(function (free) {
+ *  var lockedFunc = lock(function(free) {
  *    setTimeout(function { free(); }, 1000); // It will be free in 1 sec.
  *    console.log('Hello, world');
  *  });
@@ -79,7 +88,7 @@ function memoize(func) {
 function lock(func) {
   var locked, queuedArgsToReplay;
 
-  return function () {
+  return function() {
     // Convert arguments into a real array.
     var args = Array.prototype.slice.call(arguments);
     if (locked) {
@@ -143,10 +152,51 @@ function triggerCustom(el, type, data) {
   el.dispatchEvent(event);
 }
 
+/**
+ * Returns a function, that, as long as it continues to be invoked, will not
+ * be triggered. The function will be called after it stops being called for
+`* wait` msec. This utility function was originally implemented at Underscore.js.
+ *
+ * @param  {Function} func Function to debounce
+ * @param  {number} wait Time between invocations, in milliseconds.
+ * @return {Function} Debounced function.
+ */
+function debounce(func, wait) {
+  var timeout, args, context, timestamp, result;
+  var later = function() {
+    var last = Date.now() - timestamp;
+    if (last < wait) {
+      timeout = setTimeout(later, wait - last);
+    } else {
+      timeout = null;
+      result = func.apply(context, args);
+      context = args = null;
+    }
+  };
+
+  return function() {
+    context = this;
+    args = arguments;
+    timestamp = Date.now();
+    if (!timeout) {
+      timeout = setTimeout(later, wait);
+    }
+    return result;
+  };
+}
+
+function offset(el) {
+  var rect = el.getBoundingClientRect();
+  return {
+    top: rect.top + document.body.scrollTop,
+    left: rect.left + document.body.scrollLeft
+  };
+}
+
 // Polyfill Object.assign
 if (typeof Object.assign != 'function') {
-  (function () {
-    Object.assign = function (target) {
+  (function() {
+    Object.assign = function(target) {
       'use strict';
       if (target === undefined || target === null) {
         throw new TypeError('Cannot convert undefined or null to object');
@@ -169,11 +219,14 @@ if (typeof Object.assign != 'function') {
 }
 
 module.exports = {
+  debounce: debounce,
   isString: isString,
   isFunction: isFunction,
   isNumber: isNumber,
+  isArray: Array.isArray || isArray,
   lock: lock,
   memoize: memoize,
+  offset: offset,
   one: one,
   triggerNative: triggerNative,
   triggerCustom: triggerCustom,

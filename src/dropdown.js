@@ -1,9 +1,9 @@
-+function ($) {
++function($) {
   'use strict';
 
   var $window = $(window);
 
-  var include = function (zippedData, datum) {
+  var include = function(zippedData, datum) {
     var i, elem;
     var idProperty = datum.strategy.idProperty
     for (i = 0; i < zippedData.length; i++) {
@@ -19,9 +19,9 @@
   };
 
   var dropdownViews = {};
-  $(document).on('click', function (e) {
+  $(document).on('click', function(e) {
     var id = e.originalEvent && e.originalEvent.keepTextCompleteDropdown;
-    $.each(dropdownViews, function (key, view) {
+    $.each(dropdownViews, function(key, view) {
       if (key !== id) { view.deactivate(); }
     });
   });
@@ -54,7 +54,7 @@
     if (option.listPosition) { this.setPosition = option.listPosition; }
     if (option.height) { this.$el.height(option.height); }
     var self = this;
-    $.each(['maxCount', 'placement', 'footer', 'header', 'noResultsMessage', 'className'], function (_i, name) {
+    $.each(['maxCount', 'placement', 'footer', 'header', 'noResultsMessage', 'className'], function(_i, name) {
       if (option[name] != null) { self[name] = option[name]; }
     });
     this._bindEvents(element);
@@ -65,7 +65,7 @@
     // Class methods
     // -------------
 
-    createElement: function (option) {
+    createElement: function(option) {
       var $parent = option.appendTo;
       if (!($parent instanceof $)) { $parent = $($parent); }
       var $el = $('<ul></ul>')
@@ -101,7 +101,7 @@
     // Public methods
     // --------------
 
-    destroy: function () {
+    destroy: function() {
       // Don't remove $el because it may be shared by several textcompletes.
       this.deactivate();
 
@@ -113,9 +113,9 @@
       delete dropdownViews[this.id]
     },
 
-    render: function (zippedData) {
+    render: function(zippedData) {
       var contentsHtml = this._buildContents(zippedData);
-      var unzippedData = $.map(this.data, function (d) { return d.value; });
+      var unzippedData = $.map(this.data, function(d) { return d.value; });
       if (this.data.length) {
         var strategy = zippedData[0].strategy;
         if (strategy.id) {
@@ -139,7 +139,7 @@
       }
     },
 
-    setPosition: function (pos) {
+    setPosition: function(pos) {
       // Make the dropdown fixed if the input is also fixed
       // This can't be done during init, as textcomplete may be used on multiple elements on the same page
       // Because the same dropdown is reused behind the scenes, we need to recheck every time the dropdown is showed
@@ -150,7 +150,7 @@
           return false;
         if($(this).css('position') === 'fixed') {
           pos.top -= $window.scrollTop();
-          pos.left -= $window.scrollLeft();					
+          pos.left -= $window.scrollLeft();
           position = 'fixed';
           return false;
         }
@@ -161,14 +161,14 @@
       return this;
     },
 
-    clear: function () {
+    clear: function() {
       this.$el.html('');
       this.data = [];
       this._index = 0;
       this._$header = this._$footer = this._$noResultsMessage = null;
     },
 
-    activate: function () {
+    activate: function() {
       if (!this.shown) {
         this.clear();
         this.$el.show();
@@ -179,7 +179,7 @@
       return this;
     },
 
-    deactivate: function () {
+    deactivate: function() {
       if (this.shown) {
         this.$el.hide();
         if (this.className) { this.$el.removeClass(this.className); }
@@ -189,28 +189,28 @@
       return this;
     },
 
-    isUp: function (e) {
+    isUp: function(e) {
       return e.keyCode === 38 || (e.ctrlKey && e.keyCode === 80);  // UP, Ctrl-P
     },
 
-    isDown: function (e) {
+    isDown: function(e) {
       return e.keyCode === 40 || (e.ctrlKey && e.keyCode === 78);  // DOWN, Ctrl-N
     },
 
-    isEnter: function (e) {
+    isEnter: function(e) {
       var modifiers = e.ctrlKey || e.altKey || e.metaKey || e.shiftKey;
       return !modifiers && (e.keyCode === 13 || e.keyCode === 9 || (this.option.completeOnSpace === true && e.keyCode === 32))  // ENTER, TAB
     },
 
-    isPageup: function (e) {
+    isPageup: function(e) {
       return e.keyCode === 33;  // PAGEUP
     },
 
-    isPagedown: function (e) {
+    isPagedown: function(e) {
       return e.keyCode === 34;  // PAGEDOWN
     },
 
-    isEscape: function (e) {
+    isEscape: function(e) {
       return e.keyCode === 27;  // ESCAPE
     },
 
@@ -226,14 +226,14 @@
     // Private methods
     // ---------------
 
-    _bindEvents: function () {
+    _bindEvents: function() {
       this.$el.on('mousedown.' + this.id, '.textcomplete-item', $.proxy(this._onClick, this));
       this.$el.on('touchstart.' + this.id, '.textcomplete-item', $.proxy(this._onClick, this));
       this.$el.on('mouseover.' + this.id, '.textcomplete-item', $.proxy(this._onMouseover, this));
       this.$inputEl.on('keydown.' + this.id, $.proxy(this._onKeydown, this));
     },
 
-    _onClick: function (e) {
+    _onClick: function(e) {
       var $el = $(e.target);
       e.preventDefault();
       e.originalEvent.keepTextCompleteDropdown = this.id;
@@ -245,7 +245,7 @@
       var self = this;
       // Deactive at next tick to allow other event handlers to know whether
       // the dropdown has been shown or not.
-      setTimeout(function () {
+      setTimeout(function() {
         self.deactivate();
         if (e.type === 'touchstart') {
           self.$inputEl.focus();
@@ -254,7 +254,7 @@
     },
 
     // Activate hovered item.
-    _onMouseover: function (e) {
+    _onMouseover: function(e) {
       var $el = $(e.target);
       e.preventDefault();
       if (!$el.hasClass('textcomplete-item')) {
@@ -264,7 +264,7 @@
       this._activateIndexedItem();
     },
 
-    _onKeydown: function (e) {
+    _onKeydown: function(e) {
       if (!this.shown) { return; }
 
       var command;
@@ -305,7 +305,7 @@
       }
     },
 
-    _defaultKeydown: function (e) {
+    _defaultKeydown: function(e) {
       if (this.isUp(e)) {
         return commands.KEY_UP;
       } else if (this.isDown(e)) {
@@ -321,7 +321,7 @@
       }
     },
 
-    _up: function () {
+    _up: function() {
       if (this._index === 0) {
         this._index = this.data.length - 1;
       } else {
@@ -331,7 +331,7 @@
       this._setScroll();
     },
 
-    _down: function () {
+    _down: function() {
       if (this._index === this.data.length - 1) {
         this._index = 0;
       } else {
@@ -341,16 +341,16 @@
       this._setScroll();
     },
 
-    _enter: function (e) {
+    _enter: function(e) {
       var datum = this.data[parseInt(this._getActiveElement().data('index'), 10)];
       this.completer.select(datum.value, datum.strategy, e);
       this.deactivate();
     },
 
-    _pageup: function () {
+    _pageup: function() {
       var target = 0;
       var threshold = this._getActiveElement().position().top - this.$el.innerHeight();
-      this.$el.children().each(function (i) {
+      this.$el.children().each(function(i) {
         if ($(this).position().top + $(this).outerHeight() > threshold) {
           target = i;
           return false;
@@ -361,10 +361,10 @@
       this._setScroll();
     },
 
-    _pagedown: function () {
+    _pagedown: function() {
       var target = this.data.length - 1;
       var threshold = this._getActiveElement().position().top + this.$el.innerHeight();
-      this.$el.children().each(function (i) {
+      this.$el.children().each(function(i) {
         if ($(this).position().top > threshold) {
           target = i;
           return false
@@ -375,16 +375,16 @@
       this._setScroll();
     },
 
-    _activateIndexedItem: function () {
+    _activateIndexedItem: function() {
       this.$el.find('.textcomplete-item.active').removeClass('active');
       this._getActiveElement().addClass('active');
     },
 
-    _getActiveElement: function () {
+    _getActiveElement: function() {
       return this.$el.children('.textcomplete-item:nth(' + this._index + ')');
     },
 
-    _setScroll: function () {
+    _setScroll: function() {
       var $activeEl = this._getActiveElement();
       var itemTop = $activeEl.position().top;
       var itemHeight = $activeEl.outerHeight();
@@ -397,7 +397,7 @@
       }
     },
 
-    _buildContents: function (zippedData) {
+    _buildContents: function(zippedData) {
       var datum, i, index;
       var html = '';
       for (i = 0; i < zippedData.length; i++) {
@@ -413,7 +413,7 @@
       return html;
     },
 
-    _renderHeader: function (unzippedData) {
+    _renderHeader: function(unzippedData) {
       if (this.header) {
         if (!this._$header) {
           this._$header = $('<li class="textcomplete-header"></li>').prependTo(this.$el);
@@ -423,7 +423,7 @@
       }
     },
 
-    _renderFooter: function (unzippedData) {
+    _renderFooter: function(unzippedData) {
       if (this.footer) {
         if (!this._$footer) {
           this._$footer = $('<li class="textcomplete-footer"></li>').appendTo(this.$el);
@@ -433,7 +433,7 @@
       }
     },
 
-    _renderNoResultsMessage: function (unzippedData) {
+    _renderNoResultsMessage: function(unzippedData) {
       if (this.noResultsMessage) {
         if (!this._$noResultsMessage) {
           this._$noResultsMessage = $('<li class="textcomplete-no-results-message"></li>').appendTo(this.$el);
@@ -443,7 +443,7 @@
       }
     },
 
-    _renderContents: function (html) {
+    _renderContents: function(html) {
       if (this._$footer) {
         this._$footer.before(html);
       } else {
@@ -470,7 +470,7 @@
       }
     },
 
-    _applyPlacement: function (position) {
+    _applyPlacement: function(position) {
       // If the 'placement' option set to 'top', move the position above the element.
       if (this.placement.indexOf('top') !== -1) {
         // Overwrite the position object to set the 'bottom' property instead of the top.

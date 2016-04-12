@@ -34,7 +34,11 @@ if (typeof jQuery === 'undefined') {
 
   $.fn.textcomplete = function (strategies, option) {
     var args = Array.prototype.slice.call(arguments);
+    console.log('this outside', this);
+
     return this.each(function () {
+      console.log('this each', this);
+
       var self = this;
       var $this = $(this);
       var completer = $this.data('textComplete');
@@ -480,7 +484,7 @@ if (typeof jQuery === 'undefined') {
           return false;
         if($(this).css('position') === 'fixed') {
           pos.top -= $window.scrollTop();
-          pos.left -= $window.scrollLeft();					
+          pos.left -= $window.scrollLeft();
           position = 'fixed';
           return false;
         }
@@ -1171,13 +1175,13 @@ if (typeof jQuery === 'undefined') {
         pre = pre.replace(strategy.match, newSubstr);
         range.selectNodeContents(range.startContainer);
         range.deleteContents();
-        
+
         // create temporary elements
         var preWrapper = document.createElement("div");
         preWrapper.innerHTML = pre;
         var postWrapper = document.createElement("div");
         postWrapper.innerHTML = post;
-        
+
         // create the fragment thats inserted
         var fragment = document.createDocumentFragment();
         var childNode;
@@ -1188,11 +1192,11 @@ if (typeof jQuery === 'undefined') {
         while (childNode = postWrapper.firstChild) {
         	fragment.appendChild(childNode);
         }
-        
+
         // insert the fragment & jump behind the last node in "pre"
         range.insertNode(fragment);
         range.setStartAfter(lastOfPre);
-        
+
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
@@ -1246,18 +1250,18 @@ if (typeof jQuery === 'undefined') {
 }(jQuery);
 
 // The MIT License (MIT)
-// 
+//
 // Copyright (c) 2015 Jonathan Ong me@jongleberry.com
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 // associated documentation files (the "Software"), to deal in the Software without restriction,
 // including without limitation the rights to use, copy, modify, merge, publish, distribute,
 // sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all copies or
 // substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
 // NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
 // NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,

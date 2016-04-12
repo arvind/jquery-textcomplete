@@ -26,9 +26,9 @@ Object.assign(Strategy.prototype, {
   // Optional
   id:         null,
   cache:      false,
-  context:    function () { return true; },
+  context:    function() { return true; },
   index:      2,
-  template:   function (obj) { return obj; },
+  template:   function(obj) { return obj; },
   idProperty: null
 });
 
