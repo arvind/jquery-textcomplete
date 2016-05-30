@@ -193,6 +193,22 @@ function offset(el) {
   };
 }
 
+function include(zippedData, datum) {
+  var idProperty = datum.strategy.idProperty,
+      i, elem;
+
+  for (i = 0; i < zippedData.length; i++) {
+    elem = zippedData[i];
+    if (elem.strategy !== datum.strategy) continue;
+    if (idProperty) {
+      if (elem.value[idProperty] === datum.value[idProperty]) return true;
+    } else {
+      if (elem.value === datum.value) return true;
+    }
+  }
+  return false;
+};
+
 // Polyfill Object.assign
 if (typeof Object.assign != 'function') {
   (function() {
@@ -220,6 +236,7 @@ if (typeof Object.assign != 'function') {
 
 module.exports = {
   debounce: debounce,
+  include: include,
   isString: isString,
   isFunction: isFunction,
   isNumber: isNumber,
