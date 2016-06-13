@@ -209,6 +209,18 @@ function include(zippedData, datum) {
   return false;
 };
 
+/* native js implementation of jQuery's .closest() */
+function closest(el, class) {
+  while (el.className != clazz) {
+    el = el.parentNode;
+    if (!el) {
+      return null;
+    }
+  }
+
+  return el;
+}
+
 // Polyfill Object.assign
 if (typeof Object.assign != 'function') {
   (function() {

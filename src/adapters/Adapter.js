@@ -104,11 +104,12 @@ Object.assign(Adapter.prototype, {
       case 38: // UP
         return true;
     }
-    if (clickEvent.ctrlKey) switch (clickEvent.keyCode) {
-      case 78: // Ctrl-N
-      case 80: // Ctrl-P
-        return true;
-    }
+    if (clickEvent.ctrlKey)
+      switch (clickEvent.keyCode) {
+        case 78: // Ctrl-N
+        case 80: // Ctrl-P
+          return true;
+      }
   }
 });
 

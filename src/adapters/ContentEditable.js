@@ -110,7 +110,7 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
    */
   getTextFromHeadToCaret: function() {
     var range = window.getSelection().getRangeAt(0),
-        election = range.cloneRange();
+        selection = range.cloneRange();
 
     selection.selectNodeContents(range.startContainer);
     return selection.toString().substring(0, range.startOffset);

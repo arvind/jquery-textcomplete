@@ -10,7 +10,8 @@
 var Completer = require('./Completer'),
     Strategy  = require('./Strategy'),
     util = require('./util'),
-    id = 0, registry = {};
+    id = 0,
+    registry = {};
 
 /**
  * Initialize the TextComplete interaction.
