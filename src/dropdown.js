@@ -1,8 +1,11 @@
+/* jshint node: true */
+
 'use strict';
 
 var util = require('./util');
 
 var dropdownViews = {};
+
 document.addEventListener('click', function(e) {
   var id = e.originalEvent && e.originalEvent.keepTextCompleteDropdown;
   Object.keys(dropdownViews).forEach(function(key) {
@@ -11,15 +14,7 @@ document.addEventListener('click', function(e) {
   })
 });
 
-var COMMANDS = {
-  SKIP_DEFAULT: 0,
-  KEY_UP: 1,
-  KEY_DOWN: 2,
-  KEY_ENTER: 3,
-  KEY_PAGEUP: 4,
-  KEY_PAGEDOWN: 5,
-  KEY_ESCAPE: 6
-};
+var COMMANDS = require('./commands');
 
 var OPTIONS = ['maxCount', 'placement', 'footer', 'header',
   'noResultsMessage', 'className'];
@@ -47,9 +42,11 @@ function Dropdown(element, completer, options) {
     this.el.height(options.height);
   }
 
-  options.forEach(function(opt) {
-    if (options[name] != null) {
-      this[name] = options[name];
+  // opt.name potentially empty
+  OPTIONS.forEach(function(opt) {
+    console.log('Dropdown.js -- Dropdown constructor', opt);
+    if (options[opt.name] != null) {
+      this[opt.name] = options[opt.name];
     }
   }, this);
 
@@ -71,12 +68,12 @@ Object.assign(Dropdown, {
       el.className += ' dropdown-menu textcomplete-dropdown';
     }
 
-    el.setAttribute('id', 'textcomplete-dropdown-' + option._oid);
+    el.setAttribute('id', 'textcomplete-dropdown-' + options._oid);
     Object.assign(el.style, {
       display: 'none',
       position: 'absolute',
       left: 0,
-      zIndex: option.zIndex
+      zIndex: options.zIndex
     });
 
     parent.appendChild(el);
@@ -165,7 +162,7 @@ Object.assign(Dropdown.prototype, {
         setElem = this.inputEl;
 
     // http://stackoverflow.com/a/8729274/3457884
-    // TODO: move out to util
+    // TODO: move out to util?
     while (setElem) {
       set.unshift(setElem);
       setElem = setElem.parentNode;
@@ -173,12 +170,12 @@ Object.assign(Dropdown.prototype, {
 
     // Check if input or one of its parents has positioning we need to care about
     set.forEach(function(currentSetItem) {
-      if (window.getComputedStyle(currentSetItem)['position'] === 'absolute')
+      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'absolute')
         return false;
 
-      if (window.getComputedStyle(currentSetItem)['position'] === 'fixed') {
-        pos.top -= window.scrollTop();
-        pos.left -= window.scrollLeft();
+      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'fixed') {
+        pos.top -= document.querySelectorAll(window)[0].scrollTop();
+        pos.left -= document.querySelectorAll(window)[0].scrollLeft();
         position = 'fixed';
         return false;
       }
@@ -256,13 +253,7 @@ Object.assign(Dropdown.prototype, {
   // Private methods
   // ---------------
   _bindEvents: function() {
-    // this.el.on('mousedown.' + this.id, '.textcomplete-item', $.proxy(this._onClick, this));
-    // this.el.on('touchstart.' + this.id, '.textcomplete-item', $.proxy(this._onClick, this));
-    // this.el.on('mouseover.' + this.id, '.textcomplete-item', $.proxy(this._onMouseover, this));
-    // this.inputEl.on('keydown.' + this.id, $.proxy(this._onKeydown, this));
-
-    /* write event creator module if necessary */
-    // suspect: translation loss, redundancy
+    // might need custom event generator module
     this.el.addEventListener('mousedown.' + this.id, function(e) {
       if (e.target && e.target.classList.contains('.textcomplete-item')) {
         this._onClick(e);
@@ -285,37 +276,15 @@ Object.assign(Dropdown.prototype, {
   },
 
   _onClick: function(e) {
-    // suspect: e.target as opposed to document.querySelectorAll(e.target)
-    // var $el = $(e.target);
-    // e.preventDefault();
-    // e.originalEvent.keepTextCompleteDropdown = this.id;
-    // if (!$el.hasClass('textcomplete-item')) {
-    //   $el = $el.closest('.textcomplete-item');
-    // }
-    // var datum = this.data[parseInt($el.data('index'), 10)];
-    // this.completer.select(datum.value, datum.strategy, e);
-    // var self = this;
-    // // Deactive at next tick to allow other event handlers to know whether
-    // // the dropdown has been shown or not.
-    // setTimeout(function() {
-    //   self.deactivate();
-    //   if (e.type === 'touchstart') {
-    //     self.$inputEl.focus();
-    //   }
-    // }, 0);
-
     e.preventDefault();
-    console.log(document.querySelectorAll(e.target));
 
     var el = e.target;
     if (el.classList.contains('textcomplete-item')) {
       el = util.closest(el, 'textcomplete-item');
     }
 
-    // suspect: data-index
+    // suspect: el.getAttribute('data-index') undefined
     var datum = this.data[parseInt(el.getAttribute('data-index'), 10)];
-
-    console.log(datum);
 
     this.completer.select(datum.value, datum.strategy, e);
     var self = this;
@@ -337,15 +306,6 @@ Object.assign(Dropdown.prototype, {
 
   // Activate hovered item.
   _onMouseover: function(e) {
-    // var $el = $(e.target);
-    //
-    // e.preventDefault();
-    // if (!$el.hasClass('textcomplete-item')) {
-    //   $el = $el.closest('.textcomplete-item');
-    // }
-    // this._index = parseInt($el.data('index'), 10);
-    // this._activateIndexedItem();
-
     e.preventDefault();
     var el = e.target;
 
@@ -441,17 +401,6 @@ Object.assign(Dropdown.prototype, {
   },
 
   _pageup: function() {
-    // var target = 0;
-    // var threshold = this._getActiveElement().position().top - this.el.innerHeight();
-    // this.el.children().each(function(i) {
-    //   if ($(this).position().top + $(this).outerHeight() > threshold) {
-    //     target = i;
-    //     return false;
-    //   }
-    // });
-    // this._index = target;
-    // this._activateIndexedItem();
-    // this._setScroll();
 
     // suspect: means of calculating threshold
     var target = 0;
@@ -471,17 +420,6 @@ Object.assign(Dropdown.prototype, {
   },
 
   _pagedown: function() {
-    // var target = this.data.length - 1;
-    // var threshold = this._getActiveElement().position().top + this.el.innerHeight();
-    // this.el.children().each(function(i) {
-    //   if ($(this).position().top > threshold) {
-    //     target = i;
-    //     return false
-    //   }
-    // });
-    // this._index = target;
-    // this._activateIndexedItem();
-    // this._setScroll();
 
     var target = this.data.length - 1;
     var threshold = this._getActiveElement().offsetTop + this.el.innerHeight;
@@ -542,9 +480,8 @@ Object.assign(Dropdown.prototype, {
   _renderHeader: function(unzippedData) {
     if (this.header) {
       if (!this._$header) {
-        // this._$header = $('<li class="textcomplete-header"></li>').prependTo(this.el);
 
-        // suspect: translation loss
+        // suspect: translation loss form jq to native js
         var headerEl = document.createElement('li');
         headerEl.classList.add('textcomplete-header');
         this._$header = this.el.insertBefore(headerEl, this.el.firstChild);
@@ -557,9 +494,8 @@ Object.assign(Dropdown.prototype, {
   _renderFooter: function(unzippedData) {
     if (this.footer) {
       if (!this._$footer) {
-        // this._$footer = $('<li class="textcomplete-footer"></li>').appendTo(this.el);
 
-        // suspect: translation loss
+        // suspect: translation loss form jq to native js
         this._$footer = this.el.innerHTML += '<li class="textcomplete-footer"></li>';
 
       }
@@ -587,10 +523,10 @@ Object.assign(Dropdown.prototype, {
   },
 
   _fitToBottom: function() {
-    var windowScrollBottom = window.scrollTop + window.height;
+    var windowScrollBottom = document.querySelectorAll(window)[0].scrollTop + document.querySelectorAll(window)[0].height;
     var height = this.el.style.height;
     if ((this.el.offsetTop + height) > windowScrollBottom) {
-      // suspect: translation loss
+      // suspect: translation loss form jq to native js
       this.el.top = windowScrollBottom - height;
     }
   },
@@ -606,7 +542,7 @@ Object.assign(Dropdown.prototype, {
     //   this.el.offset({left: this.el.offset().left - tolerance});
     // }
 
-    // suspect: miscalculation or translation loss
+    // suspect: miscalculation or translation loss form jq to native js
     var tolerance = 30;
     var left = this.el.getBoundingClientRect().left + document.body.scrollLeft,
         width = this.el.style.width;
@@ -637,11 +573,5 @@ Object.assign(Dropdown.prototype, {
     return position;
   }
 });
-
-/* CURRENT PLACE */
-
-// suspect: translation loss, find a means of binding COMMANDS to the right member
-// $.fn.textcomplete.Dropdown = Dropdown;
-// $.extend($.fn.textcomplete, COMMANDS);
 
 module.exports = Dropdown;

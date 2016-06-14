@@ -1,3 +1,7 @@
+/* jshint node: true */
+
+'use strict';
+
 var toString = Object.prototype.toString;
 
 /**
@@ -142,10 +146,11 @@ function triggerNative(el, type) {
 }
 
 function triggerCustom(el, type, data) {
+  var event;
   if (window.CustomEvent) {
-    var event = new CustomEvent(type, {detail: data});
+    event = new CustomEvent(type, {detail: data});
   } else {
-    var event = document.createEvent('CustomEvent');
+    event = document.createEvent('CustomEvent');
     event.initCustomEvent(type, true, true, data);
   }
 
@@ -207,17 +212,16 @@ function include(zippedData, datum) {
     }
   }
   return false;
-};
+}
 
 /* native js implementation of jQuery's .closest() */
-function closest(el, class) {
-  while (el.className != clazz) {
+function closest(el, targetClass) {
+  while (el.className != targetClass) {
     el = el.parentNode;
     if (!el) {
       return null;
     }
   }
-
   return el;
 }
 
@@ -225,7 +229,10 @@ function closest(el, class) {
 if (typeof Object.assign != 'function') {
   (function() {
     Object.assign = function(target) {
-      'use strict';
+      /* jshint node: true */
+      // suspect: v
+      // 'use strict';
+
       if (target === undefined || target === null) {
         throw new TypeError('Cannot convert undefined or null to object');
       }
@@ -259,5 +266,6 @@ module.exports = {
   one: one,
   triggerNative: triggerNative,
   triggerCustom: triggerCustom,
-  warn: warn
+  warn: warn,
+  closest: closest
 };

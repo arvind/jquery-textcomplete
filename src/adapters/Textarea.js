@@ -1,3 +1,5 @@
+/* jshint node: true */
+
 'use strict';
 
 var getCaretCoordinates = require('../../lib/textarea_caret'),

@@ -1,3 +1,5 @@
+/* jshint node: true */
+
 'use strict';
 
 var Dropdown = require('./Dropdown'),
@@ -78,8 +80,12 @@ Object.assign(Completer.prototype, {
 
   // TODO
   destroy: function() {
-    if (this.adapter)  this.adapter.destroy();
-    if (this.dropdown) this.dropdown.destroy();
+    if (this.adapter)  {
+      this.adapter.destroy();
+    }
+    if (this.dropdown) {
+      this.dropdown.destroy();
+    }
 
     this.el = this.adapter = this.dropdown = null;
   },

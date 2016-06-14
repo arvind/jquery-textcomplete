@@ -1,3 +1,5 @@
+/* jshint node: true */
+
 'use strict';
 
 var util = require('../util');
@@ -62,7 +64,7 @@ Object.assign(Adapter.prototype, {
    */
   getCaretPosition: function() {
     var position = this._getCaretRelativePosition(),
-        offset = util.offset(el),
+        offset = util.offset(this.el),
         parent = this.options.appendTo,
         parentOffset;
 
