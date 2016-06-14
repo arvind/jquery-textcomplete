@@ -12,20 +12,35 @@ module.exports = function (grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
+    // concat: {
+    //   dist: {
+    //     src: [
+    //       'src/start.frag',
+    //       'src/main.js',
+    //       'src/completer.js',
+    //       'src/dropdown.js',
+    //       'src/strategy.js',
+    //       'src/adapter.js',
+    //       'src/textarea.js',
+    //       'src/ie_textarea.js',
+    //       'src/content_editable.js',
+    //       'src/vendor/textarea_caret.js',
+    //       'src/end.frag'
+    //     ],
+    //     dest: 'dist/jquery.textcomplete.js'
+    //   }
+    // },
+
     concat: {
       dist: {
         src: [
-          'src/start.frag',
-          'src/main.js',
-          'src/completer.js',
+          'src/util.js',
+          'src/index.js',
+          'src/Completer.js',
           'src/dropdown.js',
-          'src/strategy.js',
-          'src/adapter.js',
-          'src/textarea.js',
-          'src/ie_textarea.js',
-          'src/content_editable.js',
-          'src/vendor/textarea_caret.js',
-          'src/end.frag'
+          'src/Strategy.js',
+          'src/adapters/index.js',
+          'lib/textarea_caret.js'
         ],
         dest: 'dist/jquery.textcomplete.js'
       }

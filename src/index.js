@@ -1,3 +1,5 @@
+/* jshint node: true */
+
 /*!
  * jQuery.textcomplete
  *
@@ -5,12 +7,16 @@
  * License:    MIT (https://github.com/yuku-t/jquery-textcomplete/blob/master/LICENSE)
  * Author:     Yuku Takahashi
  */
+
 'use strict';
 
 var Completer = require('./Completer'),
     Strategy  = require('./Strategy'),
     util = require('./util'),
-    id = 0, registry = {};
+    id = 0,
+    registry = {};
+
+var COMMANDS = require('./commands');
 
 /**
  * Initialize the TextComplete interaction.
@@ -20,7 +26,7 @@ var Completer = require('./Completer'),
  * @param  {Object} options Customize TextComplete interaction.
  * @return {void}
  */
-module.exports = function TextComplete(elems, strategies, options) {
+function TextComplete(elems, strategies, options) {
   elems.forEach(function(el) {
     var data = el.dataset,
         completer = registry[data.textComplete];
@@ -41,4 +47,9 @@ module.exports = function TextComplete(elems, strategies, options) {
       completer.register(Strategy.parse(strategies, el));
     }
   });
-};
+}
+
+// s
+Object.assign(TextComplete.prototype, COMMANDS);
+
+module.exports = TextComplete;

@@ -1,3 +1,5 @@
+/* jshint node: true */
+
 // NOTE: TextComplete plugin has contenteditable support but it does not work
 //       fine especially on old IEs.
 //       Any pull requests are REALLY welcome.
@@ -48,11 +50,12 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
 
       // create the fragment thats inserted
       fragment = document.createDocumentFragment();
-      while (childNode = preWrapper.firstChild) {
+
+      while (childNode === preWrapper.firstChild) {
       	lastOfPre = fragment.appendChild(childNode);
       }
 
-      while (childNode = postWrapper.firstChild) {
+      while (childNode === postWrapper.firstChild) {
       	fragment.appendChild(childNode);
       }
 
@@ -110,7 +113,7 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
    */
   getTextFromHeadToCaret: function() {
     var range = window.getSelection().getRangeAt(0),
-        election = range.cloneRange();
+        selection = range.cloneRange();
 
     selection.selectNodeContents(range.startContainer);
     return selection.toString().substring(0, range.startOffset);
