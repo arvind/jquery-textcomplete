@@ -29,13 +29,19 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
     selection.selectNodeContents(range.startContainer);
 
     var content = selection.toString(),
-        post = content.substring(range.startOffset),
-        newSubstr = strategy.replace(value, e),
-        preWrapper, postWrapper, fragment, childNode, lastOfPre;
+        post = content.substring(range.startOffset), // empty
+        newSubstr = strategy.replace(value, e);
+
+    var preWrapper,
+        postWrapper,
+        fragment,
+        lastOfPre;
 
     if (typeof newSubstr !== 'undefined') {
+      console.log('newSubstr: ', newSubstr);
+
       if (util.isArray(newSubstr)) {
-        post = newSubstr[1] + post;
+        post += newSubstr[1];
         newSubstr = newSubstr[0];
       }
 
@@ -46,18 +52,12 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
       // create temporary elements
       preWrapper  = document.createElement('div');
       postWrapper = document.createElement('div');
-      preWrapper.innerHTML = postWrapper.innerHTML = post;
+      preWrapper.innerHTML = pre;
+      postWrapper.innerHTML = post;
 
       // create the fragment thats inserted
       fragment = document.createDocumentFragment();
-
-      while (childNode === preWrapper.firstChild) {
-      	lastOfPre = fragment.appendChild(childNode);
-      }
-
-      while (childNode === postWrapper.firstChild) {
-      	fragment.appendChild(childNode);
-      }
+      lastOfPre = fragment.appendChild(preWrapper.firstChild);
 
       // insert the fragment & jump behind the last node in "pre"
       range.insertNode(fragment);
@@ -116,6 +116,7 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
         selection = range.cloneRange();
 
     selection.selectNodeContents(range.startContainer);
+
     return selection.toString().substring(0, range.startOffset);
   }
 });

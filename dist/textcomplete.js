@@ -165,6 +165,7 @@ function Completer(element, options) {
       tagType  = this.el.getAttribute('type'),
       editable = this.el.isContentEditable;
 
+  // pack tighter
   if (tagName !== 'input' && tagType !== 'text' && tagType !== 'search' && tagName !== 'textarea' && !editable) {
     throw new Error('TextComplete must be called on a textarea or a contenteditable element.');
   }
@@ -204,7 +205,7 @@ Object.assign(Completer.prototype, {
 
   initialize: function() {
     var el = this.el,
-        tagName = el.tagName().toLowerCase(),
+        tagName = el.tagName.toLowerCase(),
         Adapter, viewName;
 
     // Initialize view objects.
@@ -260,11 +261,11 @@ Object.assign(Completer.prototype, {
   },
 
   fire: function(eventName) {
-    var args = Array.prototype.slice.call(arguments, 1);
+    // perhaps a better way to check event type than regex
     if (eventName.indexOf('textComplete') >= 0) {
-      util.triggerCustom(eventName, args);
+      util.triggerCustom(this.el, eventName);
     } else {
-      util.triggerNative(eventName, args);
+      util.triggerNative(this.el, eventName);
     }
 
     return this;
@@ -281,9 +282,12 @@ Object.assign(Completer.prototype, {
   // strategy - The Strategy object.
   // e        - Click or keydown event object.
   select: function(value, strategy, e) {
+    console.log('select called');
+
     this._term = null;
     this.adapter.select(value, strategy, e);
-    this.fire('change').fire('textComplete:select', value, strategy);
+
+    this.fire('change').fire('textComplete:select');
     this.adapter.focus();
   },
 
@@ -299,7 +303,7 @@ Object.assign(Completer.prototype, {
   // Parse the given text and extract the first matching strategy.
   //
   // Returns an array including the strategy, the query term and the match
-  // object if the text matches an strategy; otherwise returns an empty array.
+  // object if the text matches a strategy; otherwise returns an empty array.
   _extractSearchQuery: function(text) {
     var strategy, context, matchRegexp, match;
 
@@ -325,10 +329,13 @@ Object.assign(Completer.prototype, {
     return [];
   },
 
+  /* POTENTIAL SUSPECT */
   // Call the search method of selected strategy..
   _search: util.lock(function(free, strategy, term, match) {
     var self = this;
+
     strategy.search(term, function(data, stillSearching) {
+
       if (!self.dropdown.shown) {
         self.dropdown.activate();
       }
@@ -340,6 +347,7 @@ Object.assign(Completer.prototype, {
       }
 
       self.dropdown.setPosition(self.adapter.getCaretPosition());
+
       self.dropdown.render(self._zip(data, strategy, term));
 
       if (!stillSearching) {      // The last callback in the current lock.
@@ -348,6 +356,7 @@ Object.assign(Completer.prototype, {
       }
 
     }, match);
+
   }),
 
   /**
@@ -364,6 +373,8 @@ Object.assign(Completer.prototype, {
   _zip: function(data, strategy, term) {
     return data.map(function(value) {
       return { value: value, strategy: strategy, term: term };
+    }).filter(function(i) {
+      return i.value !== null;
     });
   }
 });
@@ -381,6 +392,7 @@ var dropdownViews = {};
 
 document.addEventListener('click', function(e) {
   var id = e.originalEvent && e.originalEvent.keepTextCompleteDropdown;
+
   Object.keys(dropdownViews).forEach(function(key) {
     var view = dropdownViews[key];
     if (key !== id) view.deactivate();
@@ -412,12 +424,11 @@ function Dropdown(element, completer, options) {
   }
 
   if (options.height) {
-    this.el.height(options.height);
+    this.el.style.height = options.height;
   }
 
   // opt.name potentially empty
   OPTIONS.forEach(function(opt) {
-    console.log('Dropdown.js -- Dropdown constructor', opt);
     if (options[opt.name] != null) {
       this[opt.name] = options[opt.name];
     }
@@ -442,12 +453,11 @@ Object.assign(Dropdown, {
     }
 
     el.setAttribute('id', 'textcomplete-dropdown-' + options._oid);
-    Object.assign(el.style, {
-      display: 'none',
-      position: 'absolute',
-      left: 0,
-      zIndex: options.zIndex
-    });
+
+    el.style.display = 'none';
+    el.style.position = 'absolute';
+    el.style.left = 0 + 'px';
+    el.style.zIndex = options.zIndex;
 
     parent.appendChild(el);
     return el;
@@ -501,8 +511,12 @@ Object.assign(Dropdown.prototype, {
   },
 
   render: function(zippedData) {
+
     var contentsHtml = this._buildContents(zippedData);
-    var unzippedData = this.data.map(function(d) { return d.value; });
+    var unzippedData = this.data.filter(function(d) {
+      return d.value;
+    });
+
     if (this.data.length) {
       var strategy = zippedData[0].strategy;
       if (strategy.id) {
@@ -512,10 +526,10 @@ Object.assign(Dropdown.prototype, {
       }
       this._renderHeader(unzippedData);
       this._renderFooter(unzippedData);
+
       if (contentsHtml) {
         this._renderContents(contentsHtml);
         this._fitToBottom();
-        this._fitToRight();
         this._activateIndexedItem();
       }
       this._setScroll();
@@ -534,30 +548,28 @@ Object.assign(Dropdown.prototype, {
         set = [],
         setElem = this.inputEl;
 
-    // http://stackoverflow.com/a/8729274/3457884
-    // TODO: move out to util?
+    // TODO: move out to util once appropriate name is found
     while (setElem) {
       set.unshift(setElem);
       setElem = setElem.parentNode;
     }
 
-    // Check if input or one of its parents has positioning we need to care about
-    set.forEach(function(currentSetItem) {
-      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'absolute')
-        return false;
-
-      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'fixed') {
-        pos.top -= document.querySelectorAll(window)[0].scrollTop();
-        pos.left -= document.querySelectorAll(window)[0].scrollLeft();
-        position = 'fixed';
-        return false;
+    set.some(function(setItem) {
+      if (setItem.style && setItem.style.position === 'absolute') {
+        return true;
+      }
+      if (setItem.style && setItem.style.position === 'fixed') {
+        pos.top -= window.scrollTop;
+        pos.left -= window.scrollLeft;
+        position = 'absolute';
+        return true;
       }
     });
 
-    Object.assign(this.el.style, this._applyPlacement(pos));
     this.el.style.position = position;
+    // the left property in this operation causes lag + freeze
+    Object.assign(this.el.style, this._applyPlacement(pos));
 
-    // ?
     return this;
   },
 
@@ -571,8 +583,15 @@ Object.assign(Dropdown.prototype, {
   activate: function() {
     if (!this.shown) {
       this.clear();
-      this.el.style.display = '';
-      if (this.className) this.el.classList.add(this.className);
+      this.el.style.display = 'block';
+      if (this.className) {
+        if (this.el.classList) {
+          this.el.classList.add(this.className);
+        } else {
+          this.el.className += ' ' + this.className;
+        }
+      }
+
       this.completer.fire('textComplete:show');
       this.shown = true;
     }
@@ -626,53 +645,53 @@ Object.assign(Dropdown.prototype, {
   // Private methods
   // ---------------
   _bindEvents: function() {
-    // might need custom event generator module
-    this.el.addEventListener('mousedown.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
+    // packs functionality for both mobile and web
+    this.el.addEventListener('mousedown', function(e) {
+      if (e.target && e.target.parentNode && e.target.parentNode.classList.contains('textcomplete-item')) {
         this._onClick(e);
       }
     }.bind(this), false);
 
-    this.el.addEventListener('touchstart.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
+    this.el.addEventListener('touchstart', function(e) {
+      if (e.target && e.target.parentNode && e.target.parentNode.classList.contains('textcomplete-item')) {
         this._onClick(e);
       }
     }.bind(this), false);
 
-    this.el.addEventListener('mouseover.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
-        this._onClick(e);
+    this.el.addEventListener('mouseover', function(e) {
+      if (e.target && e.target.classList.contains('textcomplete-item')) {
+        this._onMouseover(e);
       }
     }.bind(this), false);
 
-    this.inputEl.addEventListener('keydown.' + this.id, this._onKeydown.bind(this), false);
+    this.inputEl.addEventListener('keydown', function (e) {
+      this._onKeydown(e);
+    }.bind(this), false);
   },
 
   _onClick: function(e) {
     e.preventDefault();
 
     var el = e.target;
-    if (el.classList.contains('textcomplete-item')) {
-      el = util.closest(el, 'textcomplete-item');
+
+    if (!el.classList.contains('textcomplete-item')) {
+      el = util.closest(el, function(el) {
+        return el.classList.contains('textcomplete-item');
+      });
     }
 
-    // suspect: el.getAttribute('data-index') undefined
     var datum = this.data[parseInt(el.getAttribute('data-index'), 10)];
-
     this.completer.select(datum.value, datum.strategy, e);
     var self = this;
 
     /*
       Deactive at next tick to allow other event handlers to know whether
       the dropdown has been shown or not.
-
-      suspect: the use of setTimeout, especially with 0s|ms of separation
-              between calls
     */
     setTimeout(function() {
       self.deactivate();
       if (e.type === 'touchstart') {
-        self.$inputEl.focus();
+        self.inputEl.focus();
       }
     }, 0);
   },
@@ -798,7 +817,6 @@ Object.assign(Dropdown.prototype, {
     var threshold = this._getActiveElement().offsetTop + this.el.innerHeight;
 
     this.el.children.forEach(function(i) {
-      console.log(i);
       if (i.offsetTop > threshold) {
         target = i;
         return false;
@@ -811,14 +829,27 @@ Object.assign(Dropdown.prototype, {
   },
 
   _activateIndexedItem: function() {
-    this.el.querySelector('.textcomplete-item.active').classList.remove('active');
-    this._getActiveElement().classList.add('active');
+    if (this.el.querySelectorAll('.textcomplete-item.active')) {
+      for (var i = 0; i < this.el.querySelectorAll('.textcomplete-item.active').length; i++) {
+        if (this.el.querySelectorAll('.textcomplete-item.active')[i].classList) {
+          this.el.querySelectorAll('.textcomplete-item.active')[i].classList.remove('active');
+        } else {
+          this.el.querySelectorAll('.textcomplete-item.active')[i].className = this.el.querySelectorAll('.textcomplete-item.active')[i].className.replace(new RegExp('(^|\\b)' + 'active'.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
+        }
+      }
+    }
+
+    if (this._getActiveElement()) {
+      if (this._getActiveElement().classList) {
+        this._getActiveElement().classList.add('active');
+      } else {
+        this._getActiveElement().className += ' active';
+      }
+    }
   },
 
   _getActiveElement: function() {
-    // return this.el.children('.textcomplete-item:nth(' + this._index + ')');
-    // suspect: might not return the nth child
-    return this.el.getElementsByClassName('textcomplete-item')[this._index - 1];
+    return this.el.querySelectorAll('.textcomplete-item')[this._index];
   },
 
   _setScroll: function() {
@@ -837,16 +868,18 @@ Object.assign(Dropdown.prototype, {
   _buildContents: function(zippedData) {
     var datum, i, index;
     var html = '';
-    // higher order iterator instead?
+
     for (i = 0; i < zippedData.length; i++) {
-      if ((this.data.length === this.maxCount) || !(util.include(this.data, datum))) break;
+      if (this.data.length === this.maxCount) break;
       datum = zippedData[i];
+      if (util.include(this.data, datum)) { continue; }
       index = this.data.length;
       this.data.push(datum);
-      html += '<li class="textcomplete-item" data-index="' + index + '"><a>';
+      html += '<li class=textcomplete-item data-index=' + index + '><a>';
       html +=   datum.strategy.template(datum.value, datum.term);
       html += '</a></li>';
     }
+
     return html;
   },
 
@@ -891,31 +924,27 @@ Object.assign(Dropdown.prototype, {
     if (this._$footer) {
       this._$footer.insertAdjacentHTML('beforebegin', html);
     } else {
-      this.el.appendChild(html);
+      this.el.innerHTML += html;
     }
   },
 
+  // TODO: translate to pure js w/o causing lag/freeze
   _fitToBottom: function() {
-    var windowScrollBottom = document.querySelectorAll(window)[0].scrollTop + document.querySelectorAll(window)[0].height;
+    var windowScrollBottom = window.scrollTop + window.height;
     var height = this.el.style.height;
+
     if ((this.el.offsetTop + height) > windowScrollBottom) {
-      // suspect: translation loss form jq to native js
       this.el.top = windowScrollBottom - height;
     }
   },
 
+  // TODO: translate to pure js w/o causing lag/freeze
   _fitToRight: function() {
     // We don't know how wide our content is until the browser positions us, and at that point it clips us
     // to the document width so we don't know if we would have overrun it. As a heuristic to avoid that clipping
     // (which makes our elements wrap onto the next line and corrupt the next item), if we're close to the right
     // edge, move left. We don't know how far to move left, so just keep nudging a bit.
 
-    // var tolerance = 30; // pixels. Make wider than vertical scrollbar because we might not be able to use that space.
-    // while (this.el.offset().left + this.el.width() > $window.width() - tolerance) {
-    //   this.el.offset({left: this.el.offset().left - tolerance});
-    // }
-
-    // suspect: miscalculation or translation loss form jq to native js
     var tolerance = 30;
     var left = this.el.getBoundingClientRect().left + document.body.scrollLeft,
         width = this.el.style.width;
@@ -924,26 +953,46 @@ Object.assign(Dropdown.prototype, {
     }
   },
 
+  // need to attach units to numerical values
   _applyPlacement: function(position) {
+    var appliedPosition = {};
+
     // If the 'placement' option set to 'top', move the position above the element.
     if (this.placement === 'top') {
       // Overwrite the position object to set the 'bottom' property instead of the top.
-      position = {
+      // position = {
+      //   top: 'auto',
+      //   bottom: this.el.parentNode.style.height - position.top + position.lineHeight + 'px',
+      //   left: position.left + 'px'
+      // }
+
+      appliedPosition = {
         top: 'auto',
-        bottom: this.el.parentNode.style.height - position.top + position.lineHeight,
-        left: position.left
-      };
+        bottom: this.el.parentNode.style.height - position.top + position.lineHeight + 'px',
+        left: position.left + 'px',
+        lineHeight: position.lineHeight
+      }
     } else {
-      position.bottom = 'auto';
-      delete position.lineHeight;
+      appliedPosition = {
+        top: position.top + (position.lineHeight/2) + 'px',
+        bottom: 'auto',
+        left: position.left + 'px'
+      }
     }
+
+    /* Needs review */
     if (this.placement === 'absleft') {
       position.left = 0;
+
+      console.log('[y:if] position: ', position);
     } else if (this.placement === 'absright') {
       position.right = 0;
       position.left = 'auto';
+
+      console.log('[y:else] position: ', position);
     }
-    return position;
+
+    return appliedPosition;
   }
 });
 
@@ -1140,13 +1189,19 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
     selection.selectNodeContents(range.startContainer);
 
     var content = selection.toString(),
-        post = content.substring(range.startOffset),
-        newSubstr = strategy.replace(value, e),
-        preWrapper, postWrapper, fragment, childNode, lastOfPre;
+        post = content.substring(range.startOffset), // empty
+        newSubstr = strategy.replace(value, e);
+
+    var preWrapper,
+        postWrapper,
+        fragment,
+        lastOfPre;
 
     if (typeof newSubstr !== 'undefined') {
+      console.log('newSubstr: ', newSubstr);
+
       if (util.isArray(newSubstr)) {
-        post = newSubstr[1] + post;
+        post += newSubstr[1];
         newSubstr = newSubstr[0];
       }
 
@@ -1157,18 +1212,12 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
       // create temporary elements
       preWrapper  = document.createElement('div');
       postWrapper = document.createElement('div');
-      preWrapper.innerHTML = postWrapper.innerHTML = post;
+      preWrapper.innerHTML = pre;
+      postWrapper.innerHTML = post;
 
       // create the fragment thats inserted
       fragment = document.createDocumentFragment();
-
-      while (childNode === preWrapper.firstChild) {
-      	lastOfPre = fragment.appendChild(childNode);
-      }
-
-      while (childNode === postWrapper.firstChild) {
-      	fragment.appendChild(childNode);
-      }
+      lastOfPre = fragment.appendChild(preWrapper.firstChild);
 
       // insert the fragment & jump behind the last node in "pre"
       range.insertNode(fragment);
@@ -1227,6 +1276,7 @@ Object.assign(ContentEditable.prototype, Adapter.prototype, {
         selection = range.cloneRange();
 
     selection.selectNodeContents(range.startContainer);
+
     return selection.toString().substring(0, range.startOffset);
   }
 });
@@ -1417,6 +1467,7 @@ var COMMANDS = require('./commands');
  * @return {void}
  */
 function TextComplete(elems, strategies, options) {
+  // add conditions + errors
   elems.forEach(function(el) {
     var data = el.dataset,
         completer = registry[data.textComplete];
@@ -1429,7 +1480,9 @@ function TextComplete(elems, strategies, options) {
 
     if (util.isString(strategies)) {
       if (!completer) return;
+
       completer[strategies].call(completer, options);
+
       if (strategies === 'destroy') {
         delete data.textComplete;
       }
@@ -1586,19 +1639,24 @@ function one(el, type, func) {
   el.addEventListener(type, wrap);
 }
 
+// semantically checks out
 function triggerNative(el, type) {
   var event = document.createEvent('HTMLEvents');
   event.initEvent(type, true, false);
+
   el.dispatchEvent(event);
 }
 
+// not sure about this
 function triggerCustom(el, type, data) {
   var event;
+
   if (window.CustomEvent) {
-    event = new CustomEvent(type, {detail: data});
+    event = new CustomEvent(type, { detail: data });
   } else {
     event = document.createEvent('CustomEvent');
     event.initCustomEvent(type, true, true, data);
+    console.log(event);
   }
 
   el.dispatchEvent(event);
@@ -1658,18 +1716,13 @@ function include(zippedData, datum) {
       if (elem.value === datum.value) return true;
     }
   }
+
   return false;
 }
 
 /* native js implementation of jQuery's .closest() */
-function closest(el, targetClass) {
-  while (el.className != targetClass) {
-    el = el.parentNode;
-    if (!el) {
-      return null;
-    }
-  }
-  return el;
+function closest(el, f) {
+  return el && (f(el) ? el : closest(el.parentNode, f));
 }
 
 // Polyfill Object.assign
@@ -1678,8 +1731,6 @@ if (typeof Object.assign != 'function') {
     Object.assign = function(target) {
       /* jshint node: true */
       // suspect: v
-      // 'use strict';
-
       if (target === undefined || target === null) {
         throw new TypeError('Cannot convert undefined or null to object');
       }
