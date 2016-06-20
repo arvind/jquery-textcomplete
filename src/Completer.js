@@ -19,6 +19,7 @@ function Completer(element, options) {
       tagType  = this.el.getAttribute('type'),
       editable = this.el.isContentEditable;
 
+  // pack tighter
   if (tagName !== 'input' && tagType !== 'text' && tagType !== 'search' && tagName !== 'textarea' && !editable) {
     throw new Error('TextComplete must be called on a textarea or a contenteditable element.');
   }
@@ -58,7 +59,7 @@ Object.assign(Completer.prototype, {
 
   initialize: function() {
     var el = this.el,
-        tagName = el.tagName().toLowerCase(),
+        tagName = el.tagName.toLowerCase(),
         Adapter, viewName;
 
     // Initialize view objects.
@@ -78,7 +79,7 @@ Object.assign(Completer.prototype, {
     this.adapter = new Adapter(el, this, this.options);
   },
 
-  // TODO
+  // TODO: complete implementation? 
   destroy: function() {
     if (this.adapter)  {
       this.adapter.destroy();
@@ -114,11 +115,11 @@ Object.assign(Completer.prototype, {
   },
 
   fire: function(eventName) {
-    var args = Array.prototype.slice.call(arguments, 1);
+    // perhaps a better way to check event type than regex
     if (eventName.indexOf('textComplete') >= 0) {
-      util.triggerCustom(eventName, args);
+      util.triggerCustom(this.el, eventName);
     } else {
-      util.triggerNative(eventName, args);
+      util.triggerNative(this.el, eventName);
     }
 
     return this;
@@ -135,9 +136,12 @@ Object.assign(Completer.prototype, {
   // strategy - The Strategy object.
   // e        - Click or keydown event object.
   select: function(value, strategy, e) {
+    console.log('select called');
+
     this._term = null;
     this.adapter.select(value, strategy, e);
-    this.fire('change').fire('textComplete:select', value, strategy);
+
+    this.fire('change').fire('textComplete:select');
     this.adapter.focus();
   },
 
@@ -153,7 +157,7 @@ Object.assign(Completer.prototype, {
   // Parse the given text and extract the first matching strategy.
   //
   // Returns an array including the strategy, the query term and the match
-  // object if the text matches an strategy; otherwise returns an empty array.
+  // object if the text matches a strategy; otherwise returns an empty array.
   _extractSearchQuery: function(text) {
     var strategy, context, matchRegexp, match;
 
@@ -182,6 +186,7 @@ Object.assign(Completer.prototype, {
   // Call the search method of selected strategy..
   _search: util.lock(function(free, strategy, term, match) {
     var self = this;
+
     strategy.search(term, function(data, stillSearching) {
       if (!self.dropdown.shown) {
         self.dropdown.activate();
@@ -200,8 +205,8 @@ Object.assign(Completer.prototype, {
         free();
         self._clearAtNext = true; // Call dropdown.clear at the next time.
       }
-
     }, match);
+
   }),
 
   /**
@@ -218,6 +223,8 @@ Object.assign(Completer.prototype, {
   _zip: function(data, strategy, term) {
     return data.map(function(value) {
       return { value: value, strategy: strategy, term: term };
+    }).filter(function(i) {
+      return i.value !== null;
     });
   }
 });

@@ -27,6 +27,7 @@ var COMMANDS = require('./commands');
  * @return {void}
  */
 function TextComplete(elems, strategies, options) {
+  // add conditions + errors
   elems.forEach(function(el) {
     var data = el.dataset,
         completer = registry[data.textComplete];
@@ -39,7 +40,9 @@ function TextComplete(elems, strategies, options) {
 
     if (util.isString(strategies)) {
       if (!completer) return;
+
       completer[strategies].call(completer, options);
+
       if (strategies === 'destroy') {
         delete data.textComplete;
       }

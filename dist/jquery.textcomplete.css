@@ -1,5 +1,4 @@
 /* Sample */
-
 .dropdown-menu {
     border: 1px solid #ddd;
     background-color: white;
@@ -19,9 +18,7 @@
     background-color: rgb(110, 183, 219);
 }
 
-
 /* SHOULD not modify */
-
 .dropdown-menu {
     list-style: none;
     padding: 0;

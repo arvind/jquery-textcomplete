@@ -3,18 +3,18 @@
 'use strict';
 
 var util = require('./util');
+var COMMANDS = require('./commands');
 
 var dropdownViews = {};
 
 document.addEventListener('click', function(e) {
   var id = e.originalEvent && e.originalEvent.keepTextCompleteDropdown;
+
   Object.keys(dropdownViews).forEach(function(key) {
     var view = dropdownViews[key];
     if (key !== id) view.deactivate();
   })
 });
-
-var COMMANDS = require('./commands');
 
 var OPTIONS = ['maxCount', 'placement', 'footer', 'header',
   'noResultsMessage', 'className'];
@@ -39,12 +39,11 @@ function Dropdown(element, completer, options) {
   }
 
   if (options.height) {
-    this.el.height(options.height);
+    this.el.style.height = options.height;
   }
 
   // opt.name potentially empty
   OPTIONS.forEach(function(opt) {
-    console.log('Dropdown.js -- Dropdown constructor', opt);
     if (options[opt.name] != null) {
       this[opt.name] = options[opt.name];
     }
@@ -69,12 +68,11 @@ Object.assign(Dropdown, {
     }
 
     el.setAttribute('id', 'textcomplete-dropdown-' + options._oid);
-    Object.assign(el.style, {
-      display: 'none',
-      position: 'absolute',
-      left: 0,
-      zIndex: options.zIndex
-    });
+
+    el.style.display = 'none';
+    el.style.position = 'absolute';
+    el.style.left = 0 + 'px';
+    el.style.zIndex = options.zIndex;
 
     parent.appendChild(el);
     return el;
@@ -128,8 +126,12 @@ Object.assign(Dropdown.prototype, {
   },
 
   render: function(zippedData) {
+
     var contentsHtml = this._buildContents(zippedData);
-    var unzippedData = this.data.map(function(d) { return d.value; });
+    var unzippedData = this.data.filter(function(d) {
+      return d.value;
+    });
+
     if (this.data.length) {
       var strategy = zippedData[0].strategy;
       if (strategy.id) {
@@ -139,10 +141,10 @@ Object.assign(Dropdown.prototype, {
       }
       this._renderHeader(unzippedData);
       this._renderFooter(unzippedData);
+
       if (contentsHtml) {
         this._renderContents(contentsHtml);
         this._fitToBottom();
-        this._fitToRight();
         this._activateIndexedItem();
       }
       this._setScroll();
@@ -161,30 +163,28 @@ Object.assign(Dropdown.prototype, {
         set = [],
         setElem = this.inputEl;
 
-    // http://stackoverflow.com/a/8729274/3457884
-    // TODO: move out to util?
+    // TODO: move out to util once appropriate name is found
     while (setElem) {
       set.unshift(setElem);
       setElem = setElem.parentNode;
     }
 
-    // Check if input or one of its parents has positioning we need to care about
-    set.forEach(function(currentSetItem) {
-      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'absolute')
-        return false;
-
-      if (document.querySelectorAll(window)[0].getComputedStyle(currentSetItem).position === 'fixed') {
-        pos.top -= document.querySelectorAll(window)[0].scrollTop();
-        pos.left -= document.querySelectorAll(window)[0].scrollLeft();
-        position = 'fixed';
-        return false;
+    set.some(function(setItem) {
+      if (setItem.style && setItem.style.position === 'absolute') {
+        return true;
+      }
+      if (setItem.style && setItem.style.position === 'fixed') {
+        pos.top -= window.scrollTop;
+        pos.left -= window.scrollLeft;
+        position = 'absolute';
+        return true;
       }
     });
 
-    Object.assign(this.el.style, this._applyPlacement(pos));
     this.el.style.position = position;
+    // the left property in this operation causes lag + freeze
+    Object.assign(this.el.style, this._applyPlacement(pos));
 
-    // ?
     return this;
   },
 
@@ -198,8 +198,15 @@ Object.assign(Dropdown.prototype, {
   activate: function() {
     if (!this.shown) {
       this.clear();
-      this.el.style.display = '';
-      if (this.className) this.el.classList.add(this.className);
+      this.el.style.display = 'block';
+      if (this.className) {
+        if (this.el.classList) {
+          this.el.classList.add(this.className);
+        } else {
+          this.el.className += ' ' + this.className;
+        }
+      }
+
       this.completer.fire('textComplete:show');
       this.shown = true;
     }
@@ -253,53 +260,53 @@ Object.assign(Dropdown.prototype, {
   // Private methods
   // ---------------
   _bindEvents: function() {
-    // might need custom event generator module
-    this.el.addEventListener('mousedown.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
+    // packs functionality for both mobile and web
+    this.el.addEventListener('mousedown', function(e) {
+      if (e.target && e.target.parentNode && e.target.parentNode.classList.contains('textcomplete-item')) {
         this._onClick(e);
       }
     }.bind(this), false);
 
-    this.el.addEventListener('touchstart.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
+    this.el.addEventListener('touchstart', function(e) {
+      if (e.target && e.target.parentNode && e.target.parentNode.classList.contains('textcomplete-item')) {
         this._onClick(e);
       }
     }.bind(this), false);
 
-    this.el.addEventListener('mouseover.' + this.id, function(e) {
-      if (e.target && e.target.classList.contains('.textcomplete-item')) {
-        this._onClick(e);
+    this.el.addEventListener('mouseover', function(e) {
+      if (e.target && e.target.classList.contains('textcomplete-item')) {
+        this._onMouseover(e);
       }
     }.bind(this), false);
 
-    this.inputEl.addEventListener('keydown.' + this.id, this._onKeydown.bind(this), false);
+    this.inputEl.addEventListener('keydown', function (e) {
+      this._onKeydown(e);
+    }.bind(this), false);
   },
 
   _onClick: function(e) {
     e.preventDefault();
 
     var el = e.target;
-    if (el.classList.contains('textcomplete-item')) {
-      el = util.closest(el, 'textcomplete-item');
+
+    if (!el.classList.contains('textcomplete-item')) {
+      el = util.closest(el, function(el) {
+        return el.classList.contains('textcomplete-item');
+      });
     }
 
-    // suspect: el.getAttribute('data-index') undefined
     var datum = this.data[parseInt(el.getAttribute('data-index'), 10)];
-
     this.completer.select(datum.value, datum.strategy, e);
     var self = this;
 
     /*
       Deactive at next tick to allow other event handlers to know whether
       the dropdown has been shown or not.
-
-      suspect: the use of setTimeout, especially with 0s|ms of separation
-              between calls
     */
     setTimeout(function() {
       self.deactivate();
       if (e.type === 'touchstart') {
-        self.$inputEl.focus();
+        self.inputEl.focus();
       }
     }, 0);
   },
@@ -425,7 +432,6 @@ Object.assign(Dropdown.prototype, {
     var threshold = this._getActiveElement().offsetTop + this.el.innerHeight;
 
     this.el.children.forEach(function(i) {
-      console.log(i);
       if (i.offsetTop > threshold) {
         target = i;
         return false;
@@ -438,14 +444,27 @@ Object.assign(Dropdown.prototype, {
   },
 
   _activateIndexedItem: function() {
-    this.el.querySelector('.textcomplete-item.active').classList.remove('active');
-    this._getActiveElement().classList.add('active');
+    if (this.el.querySelectorAll('.textcomplete-item.active')) {
+      for (var i = 0; i < this.el.querySelectorAll('.textcomplete-item.active').length; i++) {
+        if (this.el.querySelectorAll('.textcomplete-item.active')[i].classList) {
+          this.el.querySelectorAll('.textcomplete-item.active')[i].classList.remove('active');
+        } else {
+          this.el.querySelectorAll('.textcomplete-item.active')[i].className = this.el.querySelectorAll('.textcomplete-item.active')[i].className.replace(new RegExp('(^|\\b)' + 'active'.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
+        }
+      }
+    }
+
+    if (this._getActiveElement()) {
+      if (this._getActiveElement().classList) {
+        this._getActiveElement().classList.add('active');
+      } else {
+        this._getActiveElement().className += ' active';
+      }
+    }
   },
 
   _getActiveElement: function() {
-    // return this.el.children('.textcomplete-item:nth(' + this._index + ')');
-    // suspect: might not return the nth child
-    return this.el.getElementsByClassName('textcomplete-item')[this._index - 1];
+    return this.el.querySelectorAll('.textcomplete-item')[this._index];
   },
 
   _setScroll: function() {
@@ -464,16 +483,18 @@ Object.assign(Dropdown.prototype, {
   _buildContents: function(zippedData) {
     var datum, i, index;
     var html = '';
-    // higher order iterator instead?
+
     for (i = 0; i < zippedData.length; i++) {
-      if ((this.data.length === this.maxCount) || !(util.include(this.data, datum))) break;
+      if (this.data.length === this.maxCount) break;
       datum = zippedData[i];
+      if (util.include(this.data, datum)) { continue; }
       index = this.data.length;
       this.data.push(datum);
-      html += '<li class="textcomplete-item" data-index="' + index + '"><a>';
+      html += '<li class=textcomplete-item data-index=' + index + '><a>';
       html +=   datum.strategy.template(datum.value, datum.term);
       html += '</a></li>';
     }
+
     return html;
   },
 
@@ -518,31 +539,27 @@ Object.assign(Dropdown.prototype, {
     if (this._$footer) {
       this._$footer.insertAdjacentHTML('beforebegin', html);
     } else {
-      this.el.appendChild(html);
+      this.el.innerHTML += html;
     }
   },
 
+  // TODO: translate to pure js w/o causing lag/freeze
   _fitToBottom: function() {
-    var windowScrollBottom = document.querySelectorAll(window)[0].scrollTop + document.querySelectorAll(window)[0].height;
+    var windowScrollBottom = window.scrollTop + window.height;
     var height = this.el.style.height;
+
     if ((this.el.offsetTop + height) > windowScrollBottom) {
-      // suspect: translation loss form jq to native js
       this.el.top = windowScrollBottom - height;
     }
   },
 
+  // TODO: translate to pure js w/o causing lag/freeze
   _fitToRight: function() {
     // We don't know how wide our content is until the browser positions us, and at that point it clips us
     // to the document width so we don't know if we would have overrun it. As a heuristic to avoid that clipping
     // (which makes our elements wrap onto the next line and corrupt the next item), if we're close to the right
     // edge, move left. We don't know how far to move left, so just keep nudging a bit.
 
-    // var tolerance = 30; // pixels. Make wider than vertical scrollbar because we might not be able to use that space.
-    // while (this.el.offset().left + this.el.width() > $window.width() - tolerance) {
-    //   this.el.offset({left: this.el.offset().left - tolerance});
-    // }
-
-    // suspect: miscalculation or translation loss form jq to native js
     var tolerance = 30;
     var left = this.el.getBoundingClientRect().left + document.body.scrollLeft,
         width = this.el.style.width;
@@ -551,26 +568,46 @@ Object.assign(Dropdown.prototype, {
     }
   },
 
+  // need to attach units to numerical values
   _applyPlacement: function(position) {
+    var appliedPosition = {};
+
     // If the 'placement' option set to 'top', move the position above the element.
     if (this.placement === 'top') {
       // Overwrite the position object to set the 'bottom' property instead of the top.
-      position = {
+      // position = {
+      //   top: 'auto',
+      //   bottom: this.el.parentNode.style.height - position.top + position.lineHeight + 'px',
+      //   left: position.left + 'px'
+      // }
+
+      appliedPosition = {
         top: 'auto',
-        bottom: this.el.parentNode.style.height - position.top + position.lineHeight,
-        left: position.left
-      };
+        bottom: this.el.parentNode.style.height - position.top + position.lineHeight + 'px',
+        left: position.left + 'px',
+        lineHeight: position.lineHeight
+      }
     } else {
-      position.bottom = 'auto';
-      delete position.lineHeight;
+      appliedPosition = {
+        top: position.top + (position.lineHeight/2) + 'px',
+        bottom: 'auto',
+        left: position.left + 'px'
+      }
     }
+
+    /* Needs review */
     if (this.placement === 'absleft') {
       position.left = 0;
+
+      console.log('[y:if] position: ', position);
     } else if (this.placement === 'absright') {
       position.right = 0;
       position.left = 'auto';
+
+      console.log('[y:else] position: ', position);
     }
-    return position;
+
+    return appliedPosition;
   }
 });
 

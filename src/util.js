@@ -139,19 +139,24 @@ function one(el, type, func) {
   el.addEventListener(type, wrap);
 }
 
+// semantically checks out
 function triggerNative(el, type) {
   var event = document.createEvent('HTMLEvents');
   event.initEvent(type, true, false);
+
   el.dispatchEvent(event);
 }
 
+// not sure about this
 function triggerCustom(el, type, data) {
   var event;
+
   if (window.CustomEvent) {
-    event = new CustomEvent(type, {detail: data});
+    event = new CustomEvent(type, { detail: data });
   } else {
     event = document.createEvent('CustomEvent');
     event.initCustomEvent(type, true, true, data);
+    console.log(event);
   }
 
   el.dispatchEvent(event);
@@ -211,18 +216,13 @@ function include(zippedData, datum) {
       if (elem.value === datum.value) return true;
     }
   }
+
   return false;
 }
 
 /* native js implementation of jQuery's .closest() */
-function closest(el, targetClass) {
-  while (el.className != targetClass) {
-    el = el.parentNode;
-    if (!el) {
-      return null;
-    }
-  }
-  return el;
+function closest(el, f) {
+  return el && (f(el) ? el : closest(el.parentNode, f));
 }
 
 // Polyfill Object.assign
@@ -231,8 +231,6 @@ if (typeof Object.assign != 'function') {
     Object.assign = function(target) {
       /* jshint node: true */
       // suspect: v
-      // 'use strict';
-
       if (target === undefined || target === null) {
         throw new TypeError('Cannot convert undefined or null to object');
       }

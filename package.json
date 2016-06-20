@@ -27,6 +27,7 @@
     "lint": "jshint src/",
     "build": "browserify src/index.js -d -s tc | exorcist dist/textcomplete.js.map > dist/textcomplete.js",
     "postbuild": "uglifyjs dist/textcomplete.js -cm > dist/textcomplete.min.js",
-    "watch": "watchify src/index.js -v -d -s tc -o 'exorcist dist/textcomplete.js.map > dist/textcomplete.js'"
+    "watch": "watchify src/index.js -v -d -s tc -o 'exorcist dist/textcomplete.js.map > dist/textcomplete.js'",
+    "disposable": "clear && npm run lint && npm run build && cp dist/textcomplete.js /Users/anjir/Desktop/textcompletetest/scripts/textcomplete.js"
   }
 }
